@@ -4,7 +4,7 @@ project(PinTool)
 set(CMAKE_CXX_STANDARD 11)
 
 # Path to the Intel PIN installation
-set(PIN_ROOT "/path/to/pin")
+set(PIN_ROOT "${CMAKE_SOURCE_DIR}/pin")
 
 include_directories(${PIN_ROOT}/source/include/pin)
 include_directories(${PIN_ROOT}/source/include/pin/gen)
@@ -16,4 +16,5 @@ link_directories(${PIN_ROOT}/intel64/lib)
 link_directories(${PIN_ROOT}/intel64/lib-ext)
 
 add_executable(inscount inscount.cpp)
+add_executable(busy_loop busy_loop.cpp)
 target_link_libraries(inscount pin pincrt)
