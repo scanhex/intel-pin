@@ -3,7 +3,6 @@ project(IntelPIN)
 
 set(CMAKE_CXX_STANDARD 11)
 
-# Assume PIN_ROOT is set as an environment variable
 set(PIN_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/pin)
 
 # Define the library
@@ -15,6 +14,7 @@ target_include_directories(IntelPIN INTERFACE
     ${PIN_ROOT}/source/include/pin/gen
     ${PIN_ROOT}/extras/components/include
     ${PIN_ROOT}/extras/xed-intel64/include
+    ${PIN_ROOT}/extras/cxx/include
     ${PIN_ROOT}/source/tools/Utils
     ${PIN_ROOT}/source/tools/InstLib
 )
@@ -43,6 +43,9 @@ target_compile_options(IntelPIN INTERFACE
     -fomit-frame-pointer
     -fno-strict-aliasing
     -faligned-new
+    -nostdinc++
+    -isystem ${PIN_ROOT}/extras/cxx/include
+    -isystem ${PIN_ROOT}/extras/crt/include
 )
 
 # Linker options
@@ -56,6 +59,7 @@ target_link_options(IntelPIN INTERFACE
 target_link_libraries(IntelPIN INTERFACE
     ${PIN_ROOT}/intel64/runtime/pincrt/crtbeginS.o
     ${PIN_ROOT}/intel64/runtime/pincrt/crtendS.o
+    -nostdlib -lc++ -lc++abi -lm-dynamic -lc-dynamic -lunwind-dynamic
     -L${PIN_ROOT}/intel64/runtime/pincrt
     -L${PIN_ROOT}/intel64/lib
     -L${PIN_ROOT}/intel64/lib-ext
@@ -65,7 +69,6 @@ target_link_libraries(IntelPIN INTERFACE
     -lxed
     -lpindwarf
     -ldl-dynamic
-    -nostdlib
     -lm-dynamic
     -lc-dynamic
     -lunwind-dynamic
@@ -76,7 +79,7 @@ set_target_properties(IntelPIN PROPERTIES
     INTERFACE_LINK_OPTIONS "-Wl,-rpath,${PIN_ROOT}/intel64/runtime/pincrt:${PIN_ROOT}/intel64/lib:${PIN_ROOT}/intel64/lib-ext:${PIN_ROOT}/extras/xed-intel64/lib"
 )
 
-add_executable(inscount inscount.cpp)
+add_library(inscount inscount.cpp)
 target_link_libraries(inscount IntelPIN)
 add_executable(busy_loop busy_loop.cpp)
 
