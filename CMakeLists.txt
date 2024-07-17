@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 project(IntelPIN)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 
 set(PIN_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/pin)
 
 # Define the library
 add_library(IntelPIN INTERFACE)
+
+set(BIONIC_ARCH x86_64)
 
 # Include directories
 target_include_directories(IntelPIN INTERFACE
@@ -14,9 +16,14 @@ target_include_directories(IntelPIN INTERFACE
     ${PIN_ROOT}/source/include/pin/gen
     ${PIN_ROOT}/extras/components/include
     ${PIN_ROOT}/extras/xed-intel64/include
-    ${PIN_ROOT}/extras/cxx/include
+    ${PIN_ROOT}/extras/xed-intel64/include/xed
     ${PIN_ROOT}/source/tools/Utils
     ${PIN_ROOT}/source/tools/InstLib
+    SYSTEM ${PIN_ROOT}/extras/cxx/include
+    SYSTEM ${PIN_ROOT}/extras/crt/include
+    SYSTEM ${PIN_ROOT}/extras/crt/include/arch-${BIONIC_ARCH}
+    SYSTEM ${PIN_ROOT}/extras/crt/include/kernel/uapi
+    SYSTEM ${PIN_ROOT}/extras/crt/include/kernel/uapi/asm-x86
 )
 
 # Compiler definitions
@@ -24,9 +31,7 @@ target_compile_definitions(IntelPIN INTERFACE
     TARGET_IA32E
     HOST_IA32E
     TARGET_LINUX
-    BIGARRAY_MULTIPLIER=1
-    USING_XED
-    _GLIBCXX_USE_CXX11_ABI=0
+    PIN_CRT=1
 )
 
 # Compiler options
@@ -43,28 +48,19 @@ target_compile_options(IntelPIN INTERFACE
     -fomit-frame-pointer
     -fno-strict-aliasing
     -faligned-new
-    -nostdinc++
-    -isystem ${PIN_ROOT}/extras/cxx/include
-    -isystem ${PIN_ROOT}/extras/crt/include
-)
-
-# Linker options
-target_link_options(IntelPIN INTERFACE
-    -Wl,--hash-style=sysv
-    -Wl,-Bsymbolic
-    -Wl,--version-script=${PIN_ROOT}/source/include/pin/pintool.ver
 )
 
 # Libraries
 target_link_libraries(IntelPIN INTERFACE
     ${PIN_ROOT}/intel64/runtime/pincrt/crtbeginS.o
     ${PIN_ROOT}/intel64/runtime/pincrt/crtendS.o
-    -nostdlib -lc++ -lc++abi -lm-dynamic -lc-dynamic -lunwind-dynamic
     -L${PIN_ROOT}/intel64/runtime/pincrt
     -L${PIN_ROOT}/intel64/lib
     -L${PIN_ROOT}/intel64/lib-ext
     -L${PIN_ROOT}/extras/xed-intel64/lib
+    -nostdlib
     -lc++
+    -lc++abi 
     -lpin
     -lxed
     -lpindwarf
@@ -72,14 +68,12 @@ target_link_libraries(IntelPIN INTERFACE
     -lm-dynamic
     -lc-dynamic
     -lunwind-dynamic
+    -Wl,--hash-style=sysv
+    #    -Wl,-Bsymbolic - try enabling if any issues arise
+    -Wl,--version-script=${PIN_ROOT}/source/include/pin/pintool.ver
 )
 
-# Set rpath
-set_target_properties(IntelPIN PROPERTIES
-    INTERFACE_LINK_OPTIONS "-Wl,-rpath,${PIN_ROOT}/intel64/runtime/pincrt:${PIN_ROOT}/intel64/lib:${PIN_ROOT}/intel64/lib-ext:${PIN_ROOT}/extras/xed-intel64/lib"
-)
-
-add_library(inscount inscount.cpp)
+add_library(inscount SHARED inscount.cpp)
 target_link_libraries(inscount IntelPIN)
 add_executable(busy_loop busy_loop.cpp)
 
